@@ -1,1 +1,0 @@
-# medios_escritos_gestion_escolar
