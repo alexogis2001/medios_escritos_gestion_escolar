@@ -127,7 +127,7 @@ async function loadOrig(){
   if(ORIG[ds])return ORIG[ds];
   const el=document.getElementById("orig-"+ds);
   if(el){ORIG[ds]=JSON.parse(el.textContent);return ORIG[ds]}
-  await new Promise((ok,no)=>{const s=document.createElement("script");s.src="orig_"+ds+".js";s.onload=ok;s.onerror=no;document.head.appendChild(s)});
+  await new Promise((ok,no)=>{const s=document.createElement("script");s.src="orig_"+ds+".js?v=20261124b";s.onload=ok;s.onerror=no;document.head.appendChild(s)});
   return ORIG[ds];
 }
 async function xo(){
