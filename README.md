@@ -56,7 +56,7 @@ python src/crear_usuario.py eliminar -u ana
 python src/crear_usuario.py listar
 ```
 
-El nombre del supervisor (`--sup`) debe coincidir exactamente con el de los datos. Después de crear o cambiar usuarios, sube `src/usuarios.js` a tu página.
+El nombre del supervisor (`--sup`) debe coincidir exactamente con el de los datos. Una coordinadora que debe ver a varios supervisores se da de alta con `-s "NOMBRE 1,NOMBRE 2,..."` (separados por coma); en `src/usuarios.js` su campo `sup` queda como lista. Después de crear o cambiar usuarios, sube `src/usuarios.js` a tu página.
 
 > Nota: es un tablero estático, así que el filtrado ocurre en el navegador. Los hashes evitan que las contraseñas se lean a simple vista, y el login evita que la vista muestre datos ajenos, pero no protegen los archivos `assets/*.js`, que pueden consultarse directamente. Para una protección real se necesita un servidor.
 

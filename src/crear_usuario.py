@@ -8,12 +8,15 @@ Uso:
     python src/crear_usuario.py crear                 # pregunta todo paso a paso
     python src/crear_usuario.py crear -u ana -n "Ana Pérez Ruiz" -s "PEREZ RUIZ ANA"
     python src/crear_usuario.py crear -u direccion -n "Dirección" --admin
+    python src/crear_usuario.py crear -u julieta.pineda -n "Julieta De la O Pineda" \
+        -s "MARTINEZ HERNANDEZ RENE,VAZQUEZ DELGADO ARACELI"   # varios supervisores
     python src/crear_usuario.py clave -u ana          # cambia la contraseña
     python src/crear_usuario.py listar
     python src/crear_usuario.py eliminar -u ana
 
 El valor de --sup debe ser idéntico al nombre del supervisor en los datos
-(por ejemplo "PEREZ RUIZ ANA"). Un usuario --admin ve toda la información.
+(por ejemplo "PEREZ RUIZ ANA"). Para una coordinadora que ve a varios supervisores,
+sepáralos con comas. Un usuario --admin ve toda la información.
 """
 import argparse
 import getpass
@@ -28,8 +31,8 @@ RUTA_USUARIOS = Path(__file__).resolve().parent / "usuarios.js"
 MARCA_INI = "// >>> USUARIOS"
 MARCA_FIN = "// <<< USUARIOS"
 LINEA = re.compile(
-    r'^\s*(?P<u>[a-z0-9._-]+):\{nombre:(?P<nombre>"(?:[^"\\]|\\.)*"),'
-    r'sup:(?P<sup>null|"(?:[^"\\]|\\.)*"),'
+    r'^\s*(?P<u>"[a-z0-9._-]+"|[a-z0-9._-]+):\{nombre:(?P<nombre>"(?:[^"\\]|\\.)*"),'
+    r'sup:(?P<sup>null|"(?:[^"\\]|\\.)*"|\[[^\]]*\]),'
     r'sal:"(?P<sal>[0-9a-f]+)",hash:"(?P<hash>[0-9a-f]{64})"\},?\s*$'
 )
 USUARIO_VALIDO = re.compile(r"^[a-z0-9._-]{3,32}$")
@@ -58,7 +61,7 @@ def leer_usuarios(ruta: Path = RUTA_USUARIOS) -> dict:
         m = LINEA.match(linea)
         if not m:
             raise ValueError(f"Línea no reconocida en {ruta.name}: {linea.strip()[:80]}")
-        usuarios[m["u"]] = {
+        usuarios[m["u"].strip('"')] = {
             "nombre": json.loads(m["nombre"]),
             "sup": None if m["sup"] == "null" else json.loads(m["sup"]),
             "sal": m["sal"],
@@ -83,9 +86,10 @@ def escribir_usuarios(usuarios: dict, ruta: Path = RUTA_USUARIOS) -> None:
     lineas = []
     for u in sorted(usuarios, key=lambda x: (usuarios[x]["sup"] is not None, x)):
         d = usuarios[u]
-        sup = "null" if d["sup"] is None else json.dumps(d["sup"], ensure_ascii=False)
+        sup = "null" if d["sup"] is None else json.dumps(d["sup"], ensure_ascii=False, separators=(",", ":"))
+        clave = u if re.fullmatch(r"[a-z_][a-z0-9_]*", u) else json.dumps(u)  # «julieta.pineda» va entre comillas
         lineas.append(
-            f'  {u}:{{nombre:{json.dumps(d["nombre"], ensure_ascii=False)},sup:{sup},'
+            f'  {clave}:{{nombre:{json.dumps(d["nombre"], ensure_ascii=False)},sup:{sup},'
             f'sal:"{d["sal"]}",hash:"{d["hash"]}"}},'
         )
     texto = (
@@ -109,6 +113,24 @@ def validar_usuario(usuario: str) -> str:
             "números, punto, guion o guion bajo."
         )
     return usuario
+
+
+def parsear_sup(texto: str):
+    """«A, B» -> ["A", "B"]; «A» -> "A". Sin duplicados y en el mismo orden."""
+    nombres = []
+    for s in texto.split(","):
+        s = s.strip()
+        if s and s not in nombres:
+            nombres.append(s)
+    if not nombres:
+        raise ValueError("Indica al menos un supervisor, o usa --admin para acceso total.")
+    return nombres[0] if len(nombres) == 1 else nombres
+
+
+def describir_sup(sup) -> str:
+    if sup is None:
+        return "acceso total"
+    return ", ".join(sup) if isinstance(sup, list) else sup
 
 
 def validar_clave(clave: str) -> str:
@@ -145,14 +167,11 @@ def cmd_crear(args) -> int:
     if args.admin:
         sup = None
     else:
-        sup = (args.sup or input("Nombre exacto del supervisor en los datos: ")).strip()
-        if not sup:
-            print("Indica el supervisor o usa --admin para acceso total.")
-            return 1
+        sup = parsear_sup(args.sup or input("Nombre exacto del supervisor (o varios, separados por coma): "))
     clave = pedir_clave(args.clave)
     usuarios[usuario] = nueva_entrada(nombre, sup, clave)
     escribir_usuarios(usuarios)
-    print(f"Usuario «{usuario}» creado ({'acceso total' if sup is None else sup}).")
+    print(f"Usuario «{usuario}» creado ({describir_sup(sup)}).")
     return 0
 
 
@@ -191,7 +210,7 @@ def cmd_listar(_args) -> int:
         return 0
     ancho = max(len(u) for u in usuarios)
     for u, d in usuarios.items():
-        print(f"{u:<{ancho}}  {d['nombre']}  →  {d['sup'] or 'acceso total'}")
+        print(f"{u:<{ancho}}  {d['nombre']}  →  {describir_sup(d['sup'])}")
     return 0
 
 
@@ -202,7 +221,7 @@ def main(argv=None) -> int:
     c = sub.add_parser("crear", help="crea un usuario nuevo")
     c.add_argument("-u", "--usuario")
     c.add_argument("-n", "--nombre")
-    c.add_argument("-s", "--sup", help="nombre exacto del supervisor en los datos")
+    c.add_argument("-s", "--sup", help="nombre exacto del supervisor en los datos (varios separados por coma)")
     c.add_argument("--admin", action="store_true", help="acceso a toda la información")
     c.add_argument("-c", "--clave", help="evita usarlo: queda en el historial de la terminal")
     c.set_defaults(fn=cmd_crear)

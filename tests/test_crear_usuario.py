@@ -45,6 +45,25 @@ class TestUsuarios(unittest.TestCase):
         with self.assertRaises(ValueError):
             cu.validar_clave("corta")
 
+    def test_varios_supervisores_y_clave_con_punto(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            ruta = Path(tmp) / "usuarios.js"
+            usuarios = {
+                "julieta.pineda": cu.nueva_entrada(
+                    "Julieta De la O Pineda", ["MARTINEZ HERNANDEZ RENE", "VAZQUEZ DELGADO ARACELI"], "julieta987"
+                ),
+            }
+            cu.escribir_usuarios(usuarios, ruta)
+            texto = ruta.read_text(encoding="utf-8")
+            self.assertIn('"julieta.pineda":{', texto)  # con comillas: es clave JS válida
+            self.assertEqual(cu.leer_usuarios(ruta), usuarios)
+
+    def test_parsear_sup(self):
+        self.assertEqual(cu.parsear_sup("PEREZ RUIZ ANA"), "PEREZ RUIZ ANA")
+        self.assertEqual(cu.parsear_sup(" A , B ,A"), ["A", "B"])
+        with self.assertRaises(ValueError):
+            cu.parsear_sup(" , ")
+
     def test_sal_distinta_cada_vez(self):
         a = cu.nueva_entrada("X", None, "claveLarga1")
         b = cu.nueva_entrada("X", None, "claveLarga1")

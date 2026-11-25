@@ -42,7 +42,7 @@ body{min-height:100vh;display:grid;place-items:start center;padding:32px 16px}
 <div><label class="l" for="u">Usuario (para entrar)</label><input class="in" id="u" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="ana.perez"></div>
 <div><label class="l" for="n">Nombre completo</label><input class="in" id="n" autocomplete="off" placeholder="Ana Pérez Ruiz"></div>
 <div class="full"><label class="chk"><input type="checkbox" id="adm">Acceso total (ve toda la información)</label></div>
-<div class="full" id="supw"><label class="l" for="s">Supervisor en los datos</label><input class="in" id="s" list="sups" autocomplete="off" placeholder="Elige de la lista o escribe el nombre exacto"><datalist id="sups"></datalist><p class="hint" id="shint">Debe ser idéntico al nombre que aparece en los datos (mayúsculas y sin acentos, como «PEREZ RUIZ ANA»).</p></div>
+<div class="full" id="supw"><label class="l" for="s">Supervisor en los datos</label><input class="in" id="s" list="sups" autocomplete="off" placeholder="Elige de la lista o escribe el nombre exacto"><datalist id="sups"></datalist><p class="hint" id="shint">Debe ser idéntico al nombre que aparece en los datos (mayúsculas y sin acentos, como «PEREZ RUIZ ANA»). Para una coordinadora que ve varios supervisores, escríbelos separados por coma.</p></div>
 <div><label class="l" for="p1">Contraseña</label><input class="in" id="p1" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres"></div>
 <div><label class="l" for="p2">Repite la contraseña</label><input class="in" id="p2" type="password" autocomplete="new-password"></div>
 </div>
@@ -74,7 +74,7 @@ let sups=[];
 try{sups=[...new Set([...(DS.calixta||[]),...(DS.atom||[])].map(r=>r[0]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"))}catch(e){}
 $("sups").innerHTML=sups.map(x=>`<option value="${esc(x)}">`).join("");
 if(!sups.length)$("shint").textContent+=" (No se pudieron leer los datos para sugerirlos.)";
-$("tb").innerHTML=Object.entries(USUARIOS).map(([u,d])=>`<tr><td>${esc(u)}</td><td>${esc(d.nombre)}</td><td>${d.sup?esc(d.sup):"Todo"}</td></tr>`).join("");
+$("tb").innerHTML=Object.entries(USUARIOS).map(([u,d])=>`<tr><td>${esc(u)}</td><td>${esc(d.nombre)}</td><td>${d.sup?esc([].concat(d.sup).join(", ")):"Todo"}</td></tr>`).join("");
 $("adm").addEventListener("change",()=>{$("supw").hidden=$("adm").checked});
 $("gen").addEventListener("click",()=>{
   const a="abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789",r=crypto.getRandomValues(new Uint32Array(12));
@@ -87,12 +87,14 @@ $("f").addEventListener("submit",e=>{
   $("out").hidden=true;m.textContent="";
   if(!/^[a-z0-9._-]{3,32}$/.test(u))return m.textContent="El usuario debe tener de 3 a 32 caracteres: minúsculas sin acentos, números, punto, guion o guion bajo.";
   if(!n)return m.textContent="Escribe el nombre completo.";
-  if(!adm&&!s)return m.textContent="Indica el supervisor o marca «Acceso total».";
-  if(!adm&&sups.length&&!sups.includes(s))return m.textContent="Ese supervisor no aparece en los datos. Elige uno de la lista para que el usuario vea su información.";
+  const lista=[...new Set(s.split(",").map(x=>x.trim()).filter(Boolean))];
+  if(!adm&&!lista.length)return m.textContent="Indica el supervisor o marca «Acceso total».";
+  if(!adm&&sups.length&&lista.some(x=>!sups.includes(x)))return m.textContent="Algún supervisor no aparece en los datos. Elige de la lista (para varios, sepáralos con coma).";
   if(c.length<8)return m.textContent="La contraseña debe tener al menos 8 caracteres.";
   if(c!==$("p2").value)return m.textContent="Las contraseñas no coinciden.";
   const sal=Auth.nuevaSal(),h=Auth.hashClave(sal,c);
-  $("line").textContent=`  ${u}:{nombre:${JSON.stringify(n)},sup:${adm?"null":JSON.stringify(s)},sal:"${sal}",hash:"${h}"},`;
+  const clave=/^[a-z_][a-z0-9_]*$/.test(u)?u:JSON.stringify(u),supTxt=adm?"null":(lista.length===1?JSON.stringify(lista[0]):"["+lista.map(x=>JSON.stringify(x)).join(",")+"]");
+  $("line").textContent=`  ${clave}:{nombre:${JSON.stringify(n)},sup:${supTxt},sal:"${sal}",hash:"${h}"},`;
   $("cpok").textContent=Object.prototype.hasOwnProperty.call(USUARIOS,u)?"Ese usuario ya existe: reemplaza su línea anterior.":"";
   $("out").hidden=false;$("out").scrollIntoView({behavior:"smooth",block:"nearest"});
 });

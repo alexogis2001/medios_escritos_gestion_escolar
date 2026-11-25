@@ -1,6 +1,8 @@
 // Los usuarios están en src/usuarios.js y la verificación en src/auth.js.
 let SESION=null,ANALISIS_OK=false,PENDIENTE=null;
-const scoped=d=>{const todo=DS[d]||[];return SESION&&SESION.sup?todo.filter(r=>r[0]===SESION.sup):todo};
+// sup puede ser un supervisor (texto), una lista (coordinadoras) o null (ve todo).
+const vePor=s=>!SESION||!SESION.sup||(Array.isArray(SESION.sup)?SESION.sup.includes(s):SESION.sup===s);
+const scoped=d=>(DS[d]||[]).filter(r=>vePor(r[0]));
 const datasetsPermitidos=()=>["calixta","atom"].filter(d=>scoped(d).length>0);
 let R=[],ds="calixta",HM=true;
 const F={s:{n:"Supervisor",i:0},a:{n:"Agente",i:1},c:{n:"Canal",i:2},e:{n:"Estatus",i:3},d:{n:"Día",i:4},r:{n:"Área",i:5}};
@@ -137,7 +139,7 @@ async function loadOrig(){
   await new Promise((ok,no)=>{const s=document.createElement("script");s.src="assets/orig_"+ds+".js?v=20261124d";s.onload=ok;s.onerror=no;document.head.appendChild(s)});
   return ORIG[ds];
 }
-function origFiltrado(O){if(!SESION||!SESION.sup)return O.r;const i=O.h.indexOf(ds==="atom"?"supervisor":"Supervisor");return O.r.filter(r=>r[i]===SESION.sup)}
+function origFiltrado(O){if(!SESION||!SESION.sup)return O.r;const i=O.h.indexOf(ds==="atom"?"supervisor":"Supervisor");return O.r.filter(r=>vePor(r[i]))}
 async function xo(){
   const b=document.getElementById("xo"),tx=b.textContent;b.disabled=true;b.textContent="Preparando…";
   try{const O=await loadOrig();await xl([["Dataset original",[O.h,...origFiltrado(O)]]],"dataset_original_"+ds+".xlsx")}
