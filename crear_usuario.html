@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Crear usuario · Funnel Upselling</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+<link rel="stylesheet" href="src/styles.css?v=20261125a">
+<style>
+body{min-height:100vh;display:grid;place-items:start center;padding:32px 16px}
+.cu{width:min(720px,100%)}
+.cu h1{margin:0 0 6px;font-size:26px;font-weight:800;letter-spacing:-.02em}
+.cu>p{margin:0 0 22px;color:var(--mut);max-width:60ch}
+.cu .box{background:var(--surf);border:1px solid var(--line);border-radius:20px;box-shadow:var(--sh);padding:26px;margin-bottom:18px}
+.cu .box h2{margin:0 0 14px;font-size:16px;font-weight:800}
+.cu .g{display:grid;grid-template-columns:1fr 1fr;gap:0 16px}
+.cu .g .full{grid-column:1/-1}
+.cu label.l{display:block;font-size:13px;font-weight:600;margin:0 0 6px}
+.cu .in{width:100%;height:46px;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:0 14px;outline:none;margin-bottom:16px}
+.cu .in:focus{border-color:var(--c1);box-shadow:0 0 0 3px color-mix(in srgb,var(--c1) 22%,transparent)}
+.cu .hint{margin:-10px 0 16px;font-size:12.5px;color:var(--mut)}
+.cu .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.cu .chk{display:flex;align-items:center;gap:9px;font-size:14px;margin:0 0 16px;cursor:pointer}
+.cu .chk input{accent-color:var(--c1);width:16px;height:16px;margin:0}
+.cu .btn.p{background:var(--hero);color:#fff;border:0;border-radius:12px;padding:12px 20px;font-weight:700;box-shadow:0 8px 18px rgba(51,40,155,.28)}
+.cu .btn.p:hover{filter:brightness(1.1)}
+.cu pre{margin:0 0 12px;background:var(--bg);border:1px solid var(--line);border-radius:12px;padding:14px;overflow:auto;font:12.5px/1.55 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-all;color:var(--ink)}
+.cu ol{margin:0 0 4px;padding-left:20px;color:var(--mut);font-size:13.5px;line-height:1.7}
+.cu ol b{color:var(--ink)}
+.cu .msg{margin:0 0 12px;font-size:13px;color:#d6336c;min-height:1.2em}
+.cu .ok{color:var(--c2);font-weight:600}
+.cu table{width:100%;border-collapse:collapse;font-size:13.5px}
+.cu td,.cu th{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left}
+.cu th{font-size:12px;color:var(--mut);font-weight:600;text-transform:none;letter-spacing:0;position:static}
+@media (max-width:640px){.cu .g{grid-template-columns:1fr}}
+</style></head><body>
+<div class="cu">
+<h1>Crear usuario</h1>
+<p>Llena el formulario y copia la línea que se genera dentro de <b>src/usuarios.js</b>. La contraseña no se guarda en ningún lado: solo se obtiene su huella (hash), que es lo que va en el archivo.</p>
+
+<form class="box" id="f" novalidate>
+<h2>Datos del usuario</h2>
+<div class="g">
+<div><label class="l" for="u">Usuario (para entrar)</label><input class="in" id="u" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="ana.perez"></div>
+<div><label class="l" for="n">Nombre completo</label><input class="in" id="n" autocomplete="off" placeholder="Ana Pérez Ruiz"></div>
+<div class="full"><label class="chk"><input type="checkbox" id="adm">Acceso total (ve toda la información)</label></div>
+<div class="full" id="supw"><label class="l" for="s">Supervisor en los datos</label><input class="in" id="s" list="sups" autocomplete="off" placeholder="Elige de la lista o escribe el nombre exacto"><datalist id="sups"></datalist><p class="hint" id="shint">Debe ser idéntico al nombre que aparece en los datos (mayúsculas y sin acentos, como «PEREZ RUIZ ANA»).</p></div>
+<div><label class="l" for="p1">Contraseña</label><input class="in" id="p1" type="password" autocomplete="new-password" placeholder="Mínimo 8 caracteres"></div>
+<div><label class="l" for="p2">Repite la contraseña</label><input class="in" id="p2" type="password" autocomplete="new-password"></div>
+</div>
+<p class="msg" id="msg" role="alert"></p>
+<div class="row"><button class="btn p" type="submit">Generar línea</button><button class="btn o" type="button" id="gen">Sugerir contraseña segura</button></div>
+</form>
+
+<div class="box" id="out" hidden>
+<h2>Línea generada</h2>
+<pre id="line"></pre>
+<div class="row" style="margin-bottom:16px"><button class="btn o" id="cp" type="button">Copiar línea</button><span id="cpok" class="ok" role="status"></span></div>
+<ol>
+<li>Abre <b>src/usuarios.js</b>.</li>
+<li>Pega la línea <b>antes</b> de <code>// &lt;&lt;&lt; USUARIOS</code>.</li>
+<li>Guarda el archivo y súbelo a tu página. Ya puede entrar.</li>
+</ol>
+<p class="hint" style="margin:14px 0 0">Para cambiar la contraseña de alguien, genera la línea con su mismo usuario y reemplaza la anterior.</p>
+</div>
+
+<div class="box"><h2>Usuarios actuales</h2><div style="overflow:auto"><table><thead><tr><th>Usuario</th><th>Nombre</th><th>Ve</th></tr></thead><tbody id="tb"></tbody></table></div></div>
+</div>
+<script src="src/auth.js?v=20261125a"></script>
+<script src="src/usuarios.js?v=20261125a"></script>
+<script src="assets/data.js?v=20261124d" onerror="void 0"></script>
+<script src="assets/data_atom.js?v=20261124d" onerror="void 0"></script>
+<script>
+const $=id=>document.getElementById(id),esc=s=>String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let sups=[];
+try{sups=[...new Set([...(DS.calixta||[]),...(DS.atom||[])].map(r=>r[0]).filter(Boolean))].sort((a,b)=>a.localeCompare(b,"es"))}catch(e){}
+$("sups").innerHTML=sups.map(x=>`<option value="${esc(x)}">`).join("");
+if(!sups.length)$("shint").textContent+=" (No se pudieron leer los datos para sugerirlos.)";
+$("tb").innerHTML=Object.entries(USUARIOS).map(([u,d])=>`<tr><td>${esc(u)}</td><td>${esc(d.nombre)}</td><td>${d.sup?esc(d.sup):"Todo"}</td></tr>`).join("");
+$("adm").addEventListener("change",()=>{$("supw").hidden=$("adm").checked});
+$("gen").addEventListener("click",()=>{
+  const a="abcdefghjkmnpqrstuvwxyzABCDEFGHJKMNPQRSTUVWXYZ23456789",r=crypto.getRandomValues(new Uint32Array(12));
+  const c=[...r].map(x=>a[x%a.length]).join("");
+  $("p1").type=$("p2").type="text";$("p1").value=$("p2").value=c;
+});
+$("f").addEventListener("submit",e=>{
+  e.preventDefault();
+  const u=$("u").value.trim().toLowerCase(),n=$("n").value.trim(),adm=$("adm").checked,s=$("s").value.trim(),c=$("p1").value,m=$("msg");
+  $("out").hidden=true;m.textContent="";
+  if(!/^[a-z0-9._-]{3,32}$/.test(u))return m.textContent="El usuario debe tener de 3 a 32 caracteres: minúsculas sin acentos, números, punto, guion o guion bajo.";
+  if(!n)return m.textContent="Escribe el nombre completo.";
+  if(!adm&&!s)return m.textContent="Indica el supervisor o marca «Acceso total».";
+  if(!adm&&sups.length&&!sups.includes(s))return m.textContent="Ese supervisor no aparece en los datos. Elige uno de la lista para que el usuario vea su información.";
+  if(c.length<8)return m.textContent="La contraseña debe tener al menos 8 caracteres.";
+  if(c!==$("p2").value)return m.textContent="Las contraseñas no coinciden.";
+  const sal=Auth.nuevaSal(),h=Auth.hashClave(sal,c);
+  $("line").textContent=`  ${u}:{nombre:${JSON.stringify(n)},sup:${adm?"null":JSON.stringify(s)},sal:"${sal}",hash:"${h}"},`;
+  $("cpok").textContent=Object.prototype.hasOwnProperty.call(USUARIOS,u)?"Ese usuario ya existe: reemplaza su línea anterior.":"";
+  $("out").hidden=false;$("out").scrollIntoView({behavior:"smooth",block:"nearest"});
+});
+$("cp").addEventListener("click",async()=>{
+  const t=$("line").textContent;
+  try{await navigator.clipboard.writeText(t);$("cpok").textContent="Línea copiada."}
+  catch(e){const r=document.createRange();r.selectNodeContents($("line"));const s=getSelection();s.removeAllRanges();s.addRange(r);$("cpok").textContent="Selecciónala y copia con Ctrl+C."}
+});
+</script>
+</body></html>
